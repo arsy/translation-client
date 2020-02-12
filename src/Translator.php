@@ -5,7 +5,6 @@ namespace ArsyTranslator;
 
 
 use ArsyTranslator\Exception\ArsyTranslateException;
-use Dotenv\Dotenv;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
@@ -21,9 +20,6 @@ class Translator
     public function __construct()
     {
         $this->client = new Client();
-
-        $dotenv = Dotenv::createImmutable(__DIR__);
-        $dotenv->load();
     }
 
     /**
@@ -37,13 +33,13 @@ class Translator
     {
         try {
             /** @var ResponseInterface $response */
-            $response = $this->client->post(getenv(static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME), [
+            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME], [
                 'form_params' => [
                     'translation_key' => $translationKey,
                     'language' => $language,
                 ],
                 'headers' => [
-                    'x-api-token' => getenv(static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME),
+                    'x-api-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
                 ],
             ]);
         } catch (Exception $exception) {
