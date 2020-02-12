@@ -1,0 +1,23 @@
+{
+  "name": "arsy/translation-client",
+  "description": "Translation client for translation microservice.",
+  "type": "library",
+  "license": "proprietary",
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Yakup Arslan",
+      "email": "me@yakupars.pw"
+    }
+  ],
+  "require": {
+    "php": ">=7.3",
+    "guzzlehttp/guzzle": "^6.5",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "ArsyTranslator\\": "src/"
+    }
+  }
+}
