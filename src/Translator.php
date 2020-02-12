@@ -5,6 +5,7 @@ namespace ArsyTranslator;
 
 
 use ArsyTranslator\Exception\ArsyTranslateException;
+use Dotenv\Dotenv;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
@@ -20,6 +21,9 @@ class Translator
     public function __construct()
     {
         $this->client = new Client();
+
+        $dotenv = Dotenv::createImmutable(__DIR__);
+        $dotenv->load();
     }
 
     /**
