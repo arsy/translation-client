@@ -4,7 +4,9 @@
 namespace ArsyTranslator;
 
 
-use ArsyTranslator\Exception\ArsyTranslateException;
+use ArsyTranslation\Exception\ArsyTranslateException;
+use ArsyTranslation\Exception\ArsyTranslationLanguageException;
+use ArsyTranslation\Exception\ArsyTranslationUpdateException;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
@@ -57,5 +59,43 @@ class Translator
 
             return null;
         }
+    }
+
+    /**
+     * @param string $translationKey
+     * @param string $translationValue
+     * @param string $language
+     *
+     * @return bool
+     * @throws ArsyTranslationUpdateException
+     * @throws ArsyTranslationLanguageException
+     */
+    public function update(string $translationKey, string $translationValue, string $language = 'en')
+    {
+        if ($language != 'en') {
+            throw new ArsyTranslationLanguageException("The language should be en only!");
+        }
+
+        try {
+            /** @var ResponseInterface $response */
+            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME], [
+                'form_params' => [
+                    'translation_key' => $translationKey,
+                    'translation_value' => $translationValue,
+                    'language' => $language,
+                ],
+                'headers' => [
+                    'x-api-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                ],
+            ]);
+        } catch (Exception $exception) {
+            throw new ArsyTranslationUpdateException("Translation update failed.");
+        }
+
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+            return true;
+        }
+
+        return false;
     }
 }
