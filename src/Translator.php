@@ -35,7 +35,7 @@ class Translator
     {
         try {
             /** @var ResponseInterface $response */
-            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME], [
+            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate', [
                 'form_params' => [
                     'translation_key' => $translationKey,
                     'language' => $language,
@@ -78,7 +78,7 @@ class Translator
 
         try {
             /** @var ResponseInterface $response */
-            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME], [
+            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/update', [
                 'form_params' => [
                     'translation_key' => $translationKey,
                     'translation_value' => $translationValue,
