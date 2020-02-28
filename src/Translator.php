@@ -1,12 +1,12 @@
 <?php
 
 
-namespace ArsyTranslator;
+namespace ArsyTranslation\Client;
 
 
-use ArsyTranslation\Exception\ArsyTranslateException;
-use ArsyTranslation\Exception\ArsyTranslationLanguageException;
-use ArsyTranslation\Exception\ArsyTranslationUpdateException;
+use ArsyTranslation\Client\Exception\ArsyTranslateException;
+use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
+use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;

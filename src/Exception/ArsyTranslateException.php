@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ArsyTranslation\Exception;
+namespace ArsyTranslation\Client\Exception;
 
 
 use Exception;
