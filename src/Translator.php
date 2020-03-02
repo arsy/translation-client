@@ -4,17 +4,24 @@
 namespace ArsyTranslation\Client;
 
 
-use ArsyTranslation\Client\Exception\ArsyTranslateException;
+use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
+use ArsyTranslation\Client\Exception\ArsyTranslationNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
+use Symfony\Component\Dotenv\Dotenv;
 
 class Translator
 {
     const TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME = 'TRANSLATION_SERVICE_ENDPOINT';
     const TRANSLATION_SERVICE_API_TOKEN_ENV_NAME = 'TRANSLATION_SERVICE_TOKEN';
+
+    const CLIENT_STATIC = 1;
+    const SERVER_STATIC = 2;
+    const SERVER_DYNAMIC = 3;
 
     /** @var Client $client */
     protected $client;
@@ -22,39 +29,53 @@ class Translator
     public function __construct()
     {
         $this->client = new Client();
+
+        if (!class_exists(Dotenv::class)) {
+            throw new RuntimeException('Please run "composer require symfony/dotenv" to load the ".env" files configuring the application.');
+        } else {
+            // load all the .env files
+            (new Dotenv(false))->loadEnv(dirname(__DIR__) . '/.env');
+        }
     }
 
     /**
      * @param string $translationKey
      * @param string $language
+     * @param int $source
      *
      * @return string
-     * @throws ArsyTranslateException
+     * @throws ArsyTranslationException
+     * @throws ArsyTranslationNotFoundException
      */
-    public function translate(string $translationKey, string $language): ?string
+    public function translate(string $translationKey, string $language = 'en', int $source = self::SERVER_STATIC): ?string
     {
         try {
             /** @var ResponseInterface $response */
-            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate', [
-                'form_params' => [
+            $response = $this->client->get($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate/show', [
+                'query' => [
+                    'type' => $source,
                     'translation_key' => $translationKey,
                     'language' => $language,
                 ],
                 'headers' => [
-                    'x-api-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                    'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
                 ],
             ]);
         } catch (Exception $exception) {
-            throw new ArsyTranslateException("Translation request failed.");
+            if ($exception->getCode() === 404) {
+                throw new ArsyTranslationNotFoundException($exception->getMessage());
+            }
+
+            throw new ArsyTranslationException("Translation request failed." . $exception->getMessage());
         }
 
         if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
             $responseContents = $response->getBody()->getContents();
 
-            $translation = json_decode($responseContents, true)['body']['translation'];
+            $translation = json_decode($responseContents, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
-                return $translation;
+                return $translation['data']['body']['translation'];
             }
 
             return null;

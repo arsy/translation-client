@@ -6,7 +6,7 @@ namespace ArsyTranslation\Client\Exception;
 
 use Exception;
 
-class ArsyTranslateException extends Exception
+class ArsyTranslationNotFoundException extends Exception
 {
 
 }
