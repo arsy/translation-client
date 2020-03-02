@@ -9,7 +9,6 @@ use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
 use ArsyTranslation\Client\Exception\ArsyTranslationNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
 use Composer\Autoload\ClassLoader;
-use Composer\Factory;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
