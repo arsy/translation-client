@@ -8,9 +8,12 @@ use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
 use ArsyTranslation\Client\Exception\ArsyTranslationNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
+use Composer\Autoload\ClassLoader;
+use Composer\Factory;
 use Exception;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -33,8 +36,11 @@ class Translator
         if (!class_exists(Dotenv::class)) {
             throw new RuntimeException('Please run "composer require symfony/dotenv" to load the ".env" files configuring the application.');
         } else {
+            $reflection = new ReflectionClass(ClassLoader::class);
+            $vendorDir = dirname(dirname($reflection->getFileName()));
+
             // load all the .env files
-            (new Dotenv(false))->loadEnv(dirname(__DIR__) . '/.env');
+            (new Dotenv(false))->loadEnv($vendorDir . '/../.env');
         }
     }
 
