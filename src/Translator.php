@@ -4,6 +4,8 @@
 namespace ArsyTranslation\Client;
 
 
+use ArsyTranslation\Client\Exception\ArsyTranslationCreateException;
+use ArsyTranslation\Client\Exception\ArsyTranslationDeleteException;
 use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
 use ArsyTranslation\Client\Exception\ArsyTranslationNotFoundException;
@@ -52,7 +54,7 @@ class Translator
      * @throws ArsyTranslationException
      * @throws ArsyTranslationNotFoundException
      */
-    public function translate(string $translationKey, string $language = 'en', int $source = self::SERVER_STATIC): ?string
+    public function translate(string $translationKey, int $source = self::SERVER_STATIC, string $language = 'en'): ?string
     {
         try {
             /** @var ResponseInterface $response */
@@ -92,11 +94,13 @@ class Translator
      * @param string $translationValue
      * @param string $language
      *
+     * @param int $source
+     *
      * @return bool
-     * @throws ArsyTranslationUpdateException
+     * @throws ArsyTranslationCreateException
      * @throws ArsyTranslationLanguageException
      */
-    public function update(string $translationKey, string $translationValue, string $language = 'en')
+    public function create(string $translationKey, string $translationValue, int $source = self::SERVER_STATIC, string $language = 'en'): bool
     {
         if ($language != 'en') {
             throw new ArsyTranslationLanguageException("The language should be en only!");
@@ -104,18 +108,97 @@ class Translator
 
         try {
             /** @var ResponseInterface $response */
-            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/update', [
+            $response = $this->client->post($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate/create', [
                 'form_params' => [
                     'translation_key' => $translationKey,
                     'translation_value' => $translationValue,
                     'language' => $language,
+                    'type' => $source,
                 ],
                 'headers' => [
-                    'x-api-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                    'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                ],
+            ]);
+        } catch (Exception $exception) {
+            throw new ArsyTranslationCreateException("Translation update failed.");
+        }
+
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $translationKey
+     * @param string $translationValue
+     * @param string $language
+     * @param int $source
+     *
+     * @return bool
+     * @throws ArsyTranslationLanguageException
+     * @throws ArsyTranslationUpdateException
+     */
+    public function update(string $translationKey, string $translationValue, int $source = self::SERVER_STATIC, string $language = 'en'): bool
+    {
+        if ($language != 'en') {
+            throw new ArsyTranslationLanguageException("The language should be en only!");
+        }
+
+        try {
+            /** @var ResponseInterface $response */
+            $response = $this->client->patch($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate/update', [
+                'form_params' => [
+                    'translation_key' => $translationKey,
+                    'translation_value' => $translationValue,
+                    'language' => $language,
+                    'type' => $source,
+                ],
+                'headers' => [
+                    'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
                 ],
             ]);
         } catch (Exception $exception) {
             throw new ArsyTranslationUpdateException("Translation update failed.");
+        }
+
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $translationKey
+     * @param int $source
+     *
+     * @param string $language
+     *
+     * @return bool
+     * @throws ArsyTranslationDeleteException
+     * @throws ArsyTranslationLanguageException
+     */
+    public function delete(string $translationKey, int $source = self::SERVER_STATIC, string $language = 'en'): bool
+    {
+        if ($language != 'en') {
+            throw new ArsyTranslationLanguageException("The language should be en only!");
+        }
+
+        try {
+            /** @var ResponseInterface $response */
+            $response = $this->client->delete($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate/delete', [
+                'form_params' => [
+                    'translation_key' => $translationKey,
+                    'type' => $source,
+                ],
+                'headers' => [
+                    'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                ],
+            ]);
+        } catch (Exception $exception) {
+            throw new ArsyTranslationDeleteException("Translation update failed.");
         }
 
         if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
