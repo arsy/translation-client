@@ -8,7 +8,9 @@ use ArsyTranslation\Client\Exception\ArsyTranslationCreateException;
 use ArsyTranslation\Client\Exception\ArsyTranslationDeleteException;
 use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
-use ArsyTranslation\Client\Exception\ArsyTranslationNotFoundException;
+use ArsyTranslation\Client\Exception\ArsyTranslationLanguageNotFoundException;
+use ArsyTranslation\Client\Exception\ArsyTranslationProjectNotFoundException;
+use ArsyTranslation\Client\Exception\ArsyTranslationTranslationNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
 use Composer\Autoload\ClassLoader;
 use Exception;
@@ -20,6 +22,10 @@ use Symfony\Component\Dotenv\Dotenv;
 
 class Translator
 {
+    const HTTP_NOT_FOUND_PROJECT = 4040;
+    const HTTP_NOT_FOUND_LANGUAGE = 4041;
+    const HTTP_NOT_FOUND_TRANSLATION = 4042;
+
     const TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME = 'TRANSLATION_SERVICE_ENDPOINT';
     const TRANSLATION_SERVICE_API_TOKEN_ENV_NAME = 'TRANSLATION_SERVICE_TOKEN';
 
@@ -52,7 +58,9 @@ class Translator
      *
      * @return string
      * @throws ArsyTranslationException
-     * @throws ArsyTranslationNotFoundException
+     * @throws ArsyTranslationProjectNotFoundException
+     * @throws ArsyTranslationLanguageNotFoundException
+     * @throws ArsyTranslationTranslationNotFoundException
      */
     public function translate(string $translationKey, int $source = self::SERVER_STATIC, string $language = 'en'): ?string
     {
@@ -69,11 +77,23 @@ class Translator
                 ],
             ]);
         } catch (Exception $exception) {
-            if ($exception->getCode() === 404) {
-                throw new ArsyTranslationNotFoundException($exception->getMessage());
-            }
-
             throw new ArsyTranslationException("Translation request failed." . $exception->getMessage());
+        }
+
+        $responseContents = json_decode($response->getBody()->getContents(), true);
+
+        if (array_key_exists('meta', $responseContents)) {
+            switch ($responseContents['meta']['customStatusCode']) {
+                case self::HTTP_NOT_FOUND_PROJECT:
+                    throw new ArsyTranslationProjectNotFoundException();
+                    break;
+                case self::HTTP_NOT_FOUND_LANGUAGE:
+                    throw new ArsyTranslationLanguageNotFoundException();
+                    break;
+                case self::HTTP_NOT_FOUND_TRANSLATION:
+                    throw new ArsyTranslationTranslationNotFoundException();
+                    break;
+            }
         }
 
         if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
@@ -94,13 +114,11 @@ class Translator
      * @param string $translationValue
      * @param string $language
      *
-     * @param int $source
-     *
      * @return bool
      * @throws ArsyTranslationCreateException
      * @throws ArsyTranslationLanguageException
      */
-    public function create(string $translationKey, string $translationValue, int $source = self::SERVER_STATIC, string $language = 'en'): bool
+    public function create(string $translationKey, string $translationValue, string $language = 'en'): bool
     {
         if ($language != 'en') {
             throw new ArsyTranslationLanguageException("The language should be en only!");
@@ -113,7 +131,7 @@ class Translator
                     'translation_key' => $translationKey,
                     'translation_value' => $translationValue,
                     'language' => $language,
-                    'type' => $source,
+                    'type' => self::SERVER_DYNAMIC,
                 ],
                 'headers' => [
                     'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
@@ -134,13 +152,12 @@ class Translator
      * @param string $translationKey
      * @param string $translationValue
      * @param string $language
-     * @param int $source
      *
      * @return bool
      * @throws ArsyTranslationLanguageException
      * @throws ArsyTranslationUpdateException
      */
-    public function update(string $translationKey, string $translationValue, int $source = self::SERVER_STATIC, string $language = 'en'): bool
+    public function update(string $translationKey, string $translationValue, string $language = 'en'): bool
     {
         if ($language != 'en') {
             throw new ArsyTranslationLanguageException("The language should be en only!");
@@ -153,7 +170,7 @@ class Translator
                     'translation_key' => $translationKey,
                     'translation_value' => $translationValue,
                     'language' => $language,
-                    'type' => $source,
+                    'type' => self::SERVER_DYNAMIC,
                 ],
                 'headers' => [
                     'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
@@ -172,15 +189,13 @@ class Translator
 
     /**
      * @param string $translationKey
-     * @param int $source
-     *
      * @param string $language
      *
      * @return bool
      * @throws ArsyTranslationDeleteException
      * @throws ArsyTranslationLanguageException
      */
-    public function delete(string $translationKey, int $source = self::SERVER_STATIC, string $language = 'en'): bool
+    public function delete(string $translationKey, string $language = 'en'): bool
     {
         if ($language != 'en') {
             throw new ArsyTranslationLanguageException("The language should be en only!");
@@ -191,7 +206,7 @@ class Translator
             $response = $this->client->delete($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate/delete', [
                 'form_params' => [
                     'translation_key' => $translationKey,
-                    'type' => $source,
+                    'type' => self::SERVER_DYNAMIC,
                 ],
                 'headers' => [
                     'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
