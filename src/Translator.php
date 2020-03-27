@@ -82,7 +82,7 @@ class Translator
 
         $responseContents = json_decode($response->getBody()->getContents(), true);
 
-        if (array_key_exists('meta', $responseContents)) {
+        if (array_key_exists('meta', $responseContents) && !$responseContents['meta']['success']) {
             switch ($responseContents['meta']['customStatusCode']) {
                 case self::HTTP_NOT_FOUND_PROJECT:
                     throw new ArsyTranslationProjectNotFoundException();
