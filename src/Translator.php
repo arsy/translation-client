@@ -96,7 +96,7 @@ class Translator
             }
         }
 
-        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400 && json_last_error() === JSON_ERROR_NONE) {
             return $responseContents['data']['body']['translation'];
         }
 
