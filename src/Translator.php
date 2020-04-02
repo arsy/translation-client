@@ -96,17 +96,11 @@ class Translator
             }
         }
 
-        if ($response->getStatusCode() > 200 && $response->getStatusCode() < 400) {
-            $responseContents = $response->getBody()->getContents();
-
-            $translation = json_decode($responseContents, true);
-
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return $translation['data']['body']['translation'];
-            }
-
-            return null;
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+            return $responseContents['data']['body']['translation'];
         }
+
+        return null;
     }
 
     /**
