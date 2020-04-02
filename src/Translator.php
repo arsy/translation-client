@@ -96,7 +96,7 @@ class Translator
             }
         }
 
-        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400) {
+        if ($response->getStatusCode() > 200 && $response->getStatusCode() < 400) {
             $responseContents = $response->getBody()->getContents();
 
             $translation = json_decode($responseContents, true);
