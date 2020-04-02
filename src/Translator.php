@@ -6,7 +6,6 @@ namespace ArsyTranslation\Client;
 
 use ArsyTranslation\Client\Exception\ArsyTranslationCreateException;
 use ArsyTranslation\Client\Exception\ArsyTranslationDeleteException;
-use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationProjectNotFoundException;
@@ -15,6 +14,7 @@ use ArsyTranslation\Client\Exception\ArsyTranslationUpdateException;
 use Composer\Autoload\ClassLoader;
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
 use RuntimeException;
@@ -57,7 +57,6 @@ class Translator
      * @param int $source
      *
      * @return string
-     * @throws ArsyTranslationException
      * @throws ArsyTranslationProjectNotFoundException
      * @throws ArsyTranslationLanguageNotFoundException
      * @throws ArsyTranslationTranslationNotFoundException
@@ -76,8 +75,8 @@ class Translator
                     'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
                 ],
             ]);
-        } catch (Exception $exception) {
-            throw new ArsyTranslationException("Translation request failed." . $exception->getMessage());
+        } catch (ClientException $exception) {
+            $response = $exception->getResponse();
         }
 
         $responseContents = json_decode($response->getBody()->getContents(), true);
