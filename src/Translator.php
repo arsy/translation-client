@@ -6,6 +6,7 @@ namespace ArsyTranslation\Client;
 
 use ArsyTranslation\Client\Exception\ArsyTranslationCreateException;
 use ArsyTranslation\Client\Exception\ArsyTranslationDeleteException;
+use ArsyTranslation\Client\Exception\ArsyTranslationException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageException;
 use ArsyTranslation\Client\Exception\ArsyTranslationLanguageNotFoundException;
 use ArsyTranslation\Client\Exception\ArsyTranslationProjectNotFoundException;
@@ -22,12 +23,12 @@ use Symfony\Component\Dotenv\Dotenv;
 
 class Translator
 {
-    const HTTP_NOT_FOUND_PROJECT = 4040;
-    const HTTP_NOT_FOUND_LANGUAGE = 4041;
-    const HTTP_NOT_FOUND_TRANSLATION = 4042;
+    private const HTTP_NOT_FOUND_PROJECT = 4040;
+    private const HTTP_NOT_FOUND_LANGUAGE = 4041;
+    private const HTTP_NOT_FOUND_TRANSLATION = 4042;
 
-    const TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME = 'TRANSLATION_SERVICE_ENDPOINT';
-    const TRANSLATION_SERVICE_API_TOKEN_ENV_NAME = 'TRANSLATION_SERVICE_TOKEN';
+    private const TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME = 'TRANSLATION_SERVICE_ENDPOINT';
+    private const TRANSLATION_SERVICE_API_TOKEN_ENV_NAME = 'TRANSLATION_SERVICE_TOKEN';
 
     const CLIENT_STATIC = 1;
     const SERVER_STATIC = 2;
@@ -97,6 +98,44 @@ class Translator
 
         if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400 && json_last_error() === JSON_ERROR_NONE) {
             return $responseContents['data']['body']['translation'];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param int $source
+     *
+     * @param string $language
+     *
+     * @return array|null
+     * @throws ArsyTranslationException
+     */
+    public function translateAll(int $source = self::SERVER_STATIC, string $language = 'en'): ?array
+    {
+        try {
+            /** @var ResponseInterface $response */
+            $response = $this->client->get($_ENV[static::TRANSLATION_SERVICE_API_ENDPOINT_ENV_NAME] . '/v1/translate', [
+                'query' => [
+                    'type' => $source,
+                ],
+                'headers' => [
+                    'x-project-token' => $_ENV[static::TRANSLATION_SERVICE_API_TOKEN_ENV_NAME],
+                    'x-locale' => $language . '_EN',
+                ],
+            ]);
+        } catch (ClientException $exception) {
+            $response = $exception->getResponse();
+        }
+
+        $responseContents = json_decode($response->getBody()->getContents(), true);
+
+        if (array_key_exists('meta', $responseContents) && !$responseContents['meta']['success']) {
+            throw new ArsyTranslationException();
+        }
+
+        if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 400 && json_last_error() === JSON_ERROR_NONE) {
+            return $responseContents['data']['body']['translations'];
         }
 
         return null;
